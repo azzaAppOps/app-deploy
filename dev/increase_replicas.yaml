@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myApp
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+#le type Rolling update, c'est-à-dire qu'une nouvelle version de l'application est lancée
+#en parallèle de la version actuelle et lorsque celle-ci est prête, on envoie 100% du trafic sur cette version,
+#puis on supprime l'ancienne version. Cela permet de ne pas avoir de temps d'arrêt.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+  selector:
+    matchLabels:
+      app: myApp
+  template:
+    metadata:
+      labels:
+        app: myApp

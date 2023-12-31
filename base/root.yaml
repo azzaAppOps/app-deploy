@@ -1,0 +1,160 @@
+# YAML "DEPLOYEMENT"
+# On peut creer l'objet Pod au lieu de l'objet Deployment.
+#Le meiux est d'utiliser Deployment pour gerer les pods( déployer un ensemble de réplicas ou un pod , mettre à jour des pods ou des ensembles de réplicas ,revenir aux versions précédentes des déploiements )
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myApp
+  labels:
+    app: myApp
+    type: public
+spec:
+#Le nombre de pods (conteneur de conteneur(s): dans un pod, on peut trouver plusieurs containers qui partagent les meme resources)
+#Pour avoir une infra plus performante, on peut ne pas declarer le nombre de pods dans replica Set et on fait appel aux   (HPA ou VPA) sur un objet deploiement
+
+#Hpa:horizontal  pod autoscale: Le nombre de replicaSet n’est plus fixe. Il existe 2 types de hpa:
+#---ScaleUP:Dés que le pod atteint sa limite en cpu ou memoire => le hpa declenche la creation d’un nouveau pod
+#---ScaleDown:Baisse de charge  dans le pod=> le hpa declenche la suppression de pod
+
+#VPA:Vertical pod autoscale
+#---ScaleUP: Dés que le pod atteint sa limite => le vpa augente la taille de cpu
+#---ScaleDown: Baisse de charges dans le pod=> le vpa diminue la taille de cpu (detruit le pod et le reconstruit avec la nouvelle limite)
+  replicas: 1
+  selector:
+    matchLabels:
+     app: myApp
+  template:
+    metadata:
+      labels:
+        app: myApp
+    spec:
+      containers:
+      - name: myApp
+#       image: myRepoDocker/myApp/myApp:0.0.0  #DO NOT EDIT - KUSTOMISE VARS
+        resources:
+#limits : c'est le limit
+          limits:
+            memory: "1Gi"
+#requests : c'est l'allocation
+          requests:
+            cpu: "100m"
+            memory: "1Gi"
+        ports:
+        - containerPort: 8080
+          name: java-port
+          protocol: TCP
+        env:
+          - name: JAVA_OPTS
+            value: -Xms512m -Xmx1024m
+#  DB_USER est une variable  declarée dans standalone.xml
+          # <security>
+          #      <user-name>${env.DB_USER}</user-name>
+          #</security>
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                key: DB_USER
+                name: vault-conf
+#  DB_PASSWORD est une variable  declarée dans standalone.xml
+          # <security>
+          #      <password>${env.DB_PASSWORD}</password>
+          #</security>
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: DB_PASSWORD
+                name: vault-conf
+#  DB_CONNECTION_URL est une variable  declarée dans standalone.xml
+          #  <datasource jndi-name="java:/jdbc/app" pool-name="appDataSource" enabled="true" use-java-context="true" statistics-enabled="true">
+          #        <connection-url>${env.DB_CONNECTION_URL}</connection-url>
+          #        <driver>db2</driver>
+          #</datasource>
+          - name: DB_CONNECTION_URL
+            valueFrom:
+              configMapKeyRef:
+                key: DB_CONNECTION_URL
+                name: server-conf
+          - name: WS_URL
+            valueFrom:
+              configMapKeyRef:
+                key: WS_URL
+                name: server-conf
+          - name: WS_TOKEN
+            valueFrom:
+              secretKeyRef:
+                key: WS_TOKEN
+                name: vault-conf
+        volumeMounts:
+          - name: myApp-config-volume
+            mountPath: "/config/hibernate.properties"
+            subPath: hibernate.properties
+          - name: myApp-config-volume
+            mountPath: "/config/log4j2.xml"
+            subPath: log4j2.xml
+          - name: myApp-config-volume
+            mountPath: "/config/application-persistence.xml"
+            subPath: application-persistence.xml
+      volumes:
+        - name: myApp-config-volume
+#configMap: volume ephemere (stocké dans le pod , la node)et ce n'est pas un volume persistant(stocké dans le cluster)
+          configMap:
+            name: myApp-config
+            items:
+              - key: log4j2.xml
+                path: log4j2.xml
+              - key: hibernate.properties
+                path: hibernate.properties
+              - key: application-persistence.xml
+                path: application-persistence.xml
+      imagePullSecrets:
+      - name: app-registries
+
+# "---" sert à declarer un nouveau objet
+---
+
+# le service assure  la communication entre les pods (IP), il existe 4 types de services:
+# ClusterIP (valeur par defaut), NodePort, LoadBalancer, and ExternalName
+apiVersion: v1
+kind: Service
+metadata:
+  name: myApp
+  labels:
+    app: myApp
+spec:
+  selector:
+    app: myApp
+  ports:
+  - name: myApp
+    protocol: "TCP"
+    port: 80
+    targetPort: java-port
+---
+
+# Un Ingress peut être configuré pour donner aux services des URLs
+#  accessibles de l’extérieur, du trafic de charge équilibrée, la terminaison SSL/TLS et
+# un hébergement virtuel basé sur le nom.
+# Un contrôleur d’Ingress est responsable de l’exécution de l’Ingress, généralement avec un service load-balancer (équilibreur de charge)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: myApp
+  annotations:
+    kubernetes.io/ingress.class: "nginx" #mandatory
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  rules:
+  - host: myApp.hors-prod.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: myApp
+            port:
+              name: myApp
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - myApp.hors-prod.com
