@@ -27,13 +27,14 @@ Exemple:
 - COPY "./docker/config/standalone.xml" "/opt/jboss/wildfly/standalone/configuration/standalone.xml" 
 
 3- Creer a la racine du projet 'app' le fichier .gitlab-ci.yaml qui est le point de départ de tout pipeline Gitlab pour definir des jobs et des stages:
+
 Les bonnes pratiques à repecter au niveau de la definition des stages:
 
--Pour deployer l'image de l'appli en dev: faudrait creer un stage 'deploy-dev' pour pousser l'image scratch (generée du build de la branche dev: snapshot ) dans dockerHub et mettre à jour la versoin de l'appli dans le projet 'app-deploy' (environnement - dev).
+- Pour deployer l'image de l'appli en dev: faudrait creer un stage 'deploy-dev' pour pousser l'image scratch (generée du build de la branche dev: snapshot ) dans dockerHub et mettre à jour la versoin de l'appli dans le projet 'app-deploy' (environnement - dev).
 
--Pour deployer l'image de l'appli en uat: faudrait creer un stage 'deploy-uat' pour pousser l'image stable (generée du build de la branche uat: release ) dans dockerHub et mettre à jourla versoin de l'appli dans le projet 'app-deploy' (environnement - uat) 
+- Pour deployer l'image de l'appli en uat: faudrait creer un stage 'deploy-uat' pour pousser l'image stable (generée du build de la branche uat: release ) dans dockerHub et mettre à jourla versoin de l'appli dans le projet 'app-deploy' (environnement - uat) 
 
--Pareil pour les autres environnement
+- Pareil pour les autres environnement
 
 
 
@@ -41,7 +42,8 @@ Les bonnes pratiques à repecter au niveau de la definition des stages:
 C- ArgoCd
 
 Pour plus d'information sur l'outil ArgoCd:
--L'outil ArgoCd  permet de contrôler le déploiement d'une application sur les differents environnements. Il a besoin de deux  paramètres d'entrée:
--Le projet 'app-deploy' 
--Le docker Hub
-Si la version de l'appli change dans 'app-deploy', argoCd fait la synchronisation automatique pour deployer la bonne version sur le bon environnement.
+
+
+- L'outil ArgoCd  permet de contrôler le déploiement d'une application sur les differents environnements. Il a besoin de deux  paramètres d'entrée (le projet 'app-deploy' et le docker Hub)
+
+- Si la version de l'appli change dans 'app-deploy', argoCd fait la synchronisation automatique pour deployer la bonne version sur le bon environnement.
