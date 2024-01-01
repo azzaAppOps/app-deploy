@@ -14,27 +14,14 @@ Pour integrer le projet app-Deploy dans vos projets, il faut respecter les etape
 2- Modifier le fichier Dockerfile pour decrire la recette de construction du  projet 'app':
 Exemple:
 
-FROM quay.io/wildfly/wildfly
-ARG WAR_FILE=target/*.war
-ARG VERSION
-LABEL "app.version"="${VERSION}"
-LABEL "app.contact"="nagmouchi.azza@gmail.com"
-COPY ${WAR_FILE} "/opt/jboss/wildfly/standalone/deployments/app-binary.war"
-#creer un package '/docker/modules/com/op' au niveau de la racine du projet 'app' en ajoutant #le fichier module.xml :
-#creer un package '/docker/config' au niveau de la racine du projet 'app' en ajoutant le #fichier standalone.xml :
-#Exemple du module xml:
-#<module xmlns="urn:jboss:module:1.5" name="com.ops.config">
-     #    <resources>
-     #		<resource-root path="/config"/>
-     #    </resources>
-#</module>
-#l'instruction suivante permet de copier ce fichier module.xml dans les modules de wildfly
-COPY "./docker/modules/com/ops" "/opt/jboss/wildfly/modules/com/ops"
-#l'instruction suivante permet de specifier la partie config à wildfly
-#Dans le fichier de conf standalone.xml, on utilise des variables comme 'DB_CONNECTION_URL' ,#'WS-URL' ...
-#Ces variables dependent de l'environnement d'execution (dev, int, pprod, prod), elles seront #instantiées
-#dans le projet 'app-deploy'
-COPY "./docker/config/standalone.xml" "/opt/jboss/wildfly/standalone/configuration/standalone.xml" 
+- FROM quay.io/wildfly/wildfly
+- ARG WAR_FILE=target/*.war
+- ARG VERSION
+- LABEL "app.version"="${VERSION}"
+- LABEL "app.contact"="test@gmail.com"
+- COPY ${WAR_FILE} "/opt/jboss/wildfly/standalone/deployments/app-binary.war"
+- COPY "./docker/modules/com/ops" "/opt/jboss/wildfly/modules/com/ops"
+- COPY "./docker/config/standalone.xml" "/opt/jboss/wildfly/standalone/configuration/standalone.xml" 
 
 3- Creer a la racine du projet 'app' le fichier .gitlab-ci.yaml qui est le point de départ de tout pipeline Gitlab pour definir des jobs et des stages:
 Les bonnes pratiques à repecter au niveau de la definition des stages:
