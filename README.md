@@ -10,8 +10,11 @@ kustomize est un outil Kubernetes qui  permet de personnaliser les fichiers YAML
 B-Integration du projet :
 
 Pour integrer le projet app-Deploy dans vos projets, il faut respecter les etapes suivantes:
+
 1- Creer un  projet  'app' qui va contenir l'application
+
 2- Modifier le fichier Dockerfile pour decrire la recette de construction du  projet 'app':
+
 Exemple:
 
 - FROM quay.io/wildfly/wildfly
